@@ -1,6 +1,11 @@
 import "./App.css";
-import { Menu, Button, Card, Typography } from "@material-tailwind/react";
-import { Circle, Cloud } from "iconoir-react";
+import {
+  Menu,
+  Button,
+  Card,
+  Typography,
+  ButtonGroup,
+} from "@material-tailwind/react";
 import { useEffect, useState } from "react";
 
 import axios from "axios";
@@ -17,12 +22,13 @@ function App() {
     min: null,
     max: null,
   });
+  const [loc, setLoc] = useState({ lat: "24.7136", lon: "46.6753" });
+  const [city, setCity] = useState("Riyadh");
 
   const [date, setDate] = useState("");
   const [language, setlanguage] = useState("ar");
 
   let cancleAxios = null;
-  console.log(i18n.language);
 
   useEffect(() => {
     moment.locale(language);
@@ -30,24 +36,25 @@ function App() {
   }, [language]);
 
   useEffect(() => {
-    i18n.changeLanguage("ar");
-
+    i18n.changeLanguage(language);
+    const path =
+      "https://api.openweathermap.org/data/2.5/weather?lat=" +
+      loc.lat +
+      "&lon=" +
+      loc.lon +
+      "&appid=c0cc93f437c4711351ed54397912472d";
     axios
-      .get(
-        "https://api.openweathermap.org/data/2.5/weather?lat=24.7136&lon=46.6753&appid=c0cc93f437c4711351ed54397912472d",
-        {
-          cancelToken: new axios.CancelToken((c) => {
-            cancleAxios = c;
-          }),
-        }
-      )
+      .get(path, {
+        cancelToken: new axios.CancelToken((c) => {
+          cancleAxios = c;
+        }),
+      })
       .then(function (response) {
         console.log(response.data);
         let iconURL =
           "https://openweathermap.org/img/wn/" +
           response.data.weather[0].icon +
           "@2x.png";
-        console.log(iconURL);
         // handle success
         setTemp({
           temperature: Math.round(response.data.main.temp - 272.15),
@@ -66,7 +73,7 @@ function App() {
       // console.log('cancling')
       cancleAxios();
     };
-  }, []);
+  }, [loc]);
 
   return (
     <div
@@ -75,6 +82,26 @@ function App() {
         bg-cyan-500 h-screen flex flex-col items-center justify-center"
     >
       <div className="flex-1 w-96 flex flex-col items-center justify-center ">
+        <ButtonGroup className="py-5">
+          <Button
+            className="font-IBM font-light border-none bg-cyan-600 rounded-none"
+            onClick={() => {
+              setLoc({ lat: "30.0444", lon: "31.2357" });
+              setCity("Cairo");
+            }}
+          >
+            {t("Cairo")}
+          </Button>
+          <Button
+            className="font-IBM font-light border-none bg-cyan-600 rounded-none"
+            onClick={() => {
+              setLoc({ lat: "24.7136", lon: "46.6753" });
+              setCity("Riyadh");
+            }}
+          >
+            {t("Riyadh")}
+          </Button>
+        </ButtonGroup>
         <Card className="max-w-md overflow-hidden px-4 font-IBM bg-blue-500 border-none shadow-lg shadow-black/50 text-slate-100">
           <Card.Header
             className={`mx-3 mt-3 flex items-stretch flex-row-reverse justify-start`}
@@ -83,7 +110,7 @@ function App() {
               type="h1"
               className={`font-IBM font-normal text-right py-2 px-4`}
             >
-              {t("Riyadh")}
+              {t(city)}
             </Typography>
             <Typography
               type="span"
@@ -97,40 +124,31 @@ function App() {
 
           <Card.Body className={`flex items-stretch  flex-row-reverse `}>
             {/* Description */}
-            <div className={`grow px-4`}>
-              <div
-                className={`flex items-center  jsustify-space-between flex-row-reverse`}
-              >
-                <Typography type="h1" className="font-IBM font-light ">
-                  {temp.temperature}
-                </Typography>
-                <img src={temp.iconPath} alt="..." />
-              </div>
-              <div>
-                <Typography
-                  className={`mt-1 text-slate-300  ${
-                    language === "ar" ? "text-right" : "text-left"
-                  }`}
-                >
-                  {t(temp.description)}
-                </Typography>
-                <Typography
-                  className={`mt-1 text-slate-300  ${
-                    language === "ar" ? "text-right" : "text-left"
-                  }`}
-                >
-                  {t("min")}:{temp.min} | {t("max")}:{temp.max}
-                </Typography>
-              </div>
-            </div>
+
+            <Typography
+              type="h1"
+              className="basis-1/2 font-IBM font-light flex items-center justify-center "
+            >
+              {temp.temperature}
+            </Typography>
             {/* End Description */}
 
             {/* Big Icon */}
-            <div className="grow flex items-center justify-center">
-              <Cloud className="w-full h-full"></Cloud>
+            <div className="basis-1/2 flex items-center justify-center">
+              <img src={temp.iconPath} alt="..." />
             </div>
             {/* End Big Icon */}
           </Card.Body>
+          <hr className="border-slate-400 mx-5"></hr>
+
+          <Card.Footer className=" px-4 flex items-center justify-between">
+            <Typography className={`mt-1 text-slate-300`}>
+              {t(temp.description)}
+            </Typography>
+            <Typography className={`mt-1 text-slate-300`}>
+              {t("min")}:{temp.min} | {t("max")}:{temp.max}
+            </Typography>
+          </Card.Footer>
         </Card>
 
         <div className="w-full py-5 flex flex-row items-start">
@@ -143,9 +161,7 @@ function App() {
             </Menu.Trigger>
             <Menu.Content className="bg-inherit border-none">
               <Menu.Item
-                className={`font-IBM font-ligh flex  ${
-                  i18n.language === "ar" ? "justify-end" : ""
-                }`}
+                className={`font-IBM font-ligh flex justify-center`}
                 onClick={() => {
                   i18n.changeLanguage("ar");
                   setlanguage("ar");
@@ -154,9 +170,7 @@ function App() {
                 عربي
               </Menu.Item>
               <Menu.Item
-                className={`font-IBM font-ligh flex  ${
-                  i18n.language === "ar" ? "justify-end" : ""
-                }`}
+                className={`font-IBM font-ligh flex justify-center`}
                 onClick={() => {
                   i18n.changeLanguage("en");
                   setlanguage("en");
