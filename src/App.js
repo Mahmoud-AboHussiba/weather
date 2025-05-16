@@ -5,30 +5,31 @@ import {
   Card,
   Typography,
   ButtonGroup,
+  Spinner,
 } from "@material-tailwind/react";
 import { useEffect, useState } from "react";
 
-import axios from "axios";
+// Redux Imports
+import { useSelector, useDispatch } from "react-redux";
+import { fetchWeather } from "./features/weather/weatherSlice";
+
+// External Imports
 import moment from "moment";
 import "moment/min/locales";
 import { useTranslation } from "react-i18next";
 
 function App() {
   const [t, i18n] = useTranslation();
-  const [temp, setTemp] = useState({
-    temperature: null,
-    description: null,
-    iconPath: null,
-    min: null,
-    max: null,
-  });
+
   const [loc, setLoc] = useState({ lat: "24.7136", lon: "46.6753" });
   const [city, setCity] = useState("Riyadh");
 
   const [date, setDate] = useState("");
   const [language, setlanguage] = useState("ar");
 
-  let cancleAxios = null;
+  const weather = useSelector((state) => state.weather.value);
+  const isLoading = useSelector((state) => state.weather.isLoading);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     moment.locale(language);
@@ -37,42 +38,7 @@ function App() {
 
   useEffect(() => {
     i18n.changeLanguage(language);
-    const path =
-      "https://api.openweathermap.org/data/2.5/weather?lat=" +
-      loc.lat +
-      "&lon=" +
-      loc.lon +
-      "&appid=c0cc93f437c4711351ed54397912472d";
-    axios
-      .get(path, {
-        cancelToken: new axios.CancelToken((c) => {
-          cancleAxios = c;
-        }),
-      })
-      .then(function (response) {
-        console.log(response.data);
-        let iconURL =
-          "https://openweathermap.org/img/wn/" +
-          response.data.weather[0].icon +
-          "@2x.png";
-        // handle success
-        setTemp({
-          temperature: Math.round(response.data.main.temp - 272.15),
-          description: response.data.weather[0].description,
-          iconPath: iconURL,
-          min: Math.round(response.data.main.temp_min - 272.15),
-          max: Math.round(response.data.main.temp_max - 272.15),
-        });
-      })
-      .catch(function (error) {
-        // handle error
-        // console.log(error);
-      });
-
-    return () => {
-      // console.log('cancling')
-      cancleAxios();
-    };
+    dispatch(fetchWeather(loc));
   }, [loc]);
 
   return (
@@ -124,18 +90,18 @@ function App() {
 
           <Card.Body className={`flex items-stretch  flex-row-reverse `}>
             {/* Description */}
-
+            {isLoading ? <Spinner /> : ""}
             <Typography
               type="h1"
               className="basis-1/2 font-IBM font-light flex items-center justify-center "
             >
-              {temp.temperature}
+              {weather.temperature}
             </Typography>
             {/* End Description */}
 
             {/* Big Icon */}
             <div className="basis-1/2 flex items-center justify-center">
-              <img src={temp.iconPath} alt="..." />
+              <img src={weather.iconPath} alt="..." />
             </div>
             {/* End Big Icon */}
           </Card.Body>
@@ -143,10 +109,10 @@ function App() {
 
           <Card.Footer className=" px-4 flex items-center justify-between">
             <Typography className={`mt-1 text-slate-300`}>
-              {t(temp.description)}
+              {t(weather.description)}
             </Typography>
             <Typography className={`mt-1 text-slate-300`}>
-              {t("min")}:{temp.min} | {t("max")}:{temp.max}
+              {t("min")}:{weather.min} | {t("max")}:{weather.max}
             </Typography>
           </Card.Footer>
         </Card>
